@@ -1,0 +1,78 @@
+#!/bin/bash
+
+#
+# tomcatSays: 
+# Let Tomcat speak when it is ready!
+# This is for Mac OS X. 
+# 
+# By Rollin Crittendon, copyright 2014
+
+VERBOSE=0
+VOLUME_MUTED=`osascript -e 'output muted of (get volume settings)'`
+
+OS_NAME=`uname -s`
+
+if [ "$OS_NAME" != "Darwin" ]; then
+  echo "Sorry, this script is for Macs only."
+  exit
+fi
+
+if [ "$1" == "--help" ] || [ "$1" == "-h" ]; then
+  echo "Use tomcatSays with tail to \"hear\" when Tomcat is ready."
+  echo "For example: tail -f logs/catalina.out | tomcatSays"
+  echo ""
+  echo "Use \"tomcatSays -v\" to hear when each app is deploying as well." 
+  exit
+fi
+
+if [ "$1" == "-v" ]; then
+  VERBOSE=1
+fi
+
+while read line; 
+do 
+  echo $line
+   
+  # See if the line matches a deployment statement.
+  # If so then figure out what is being deployed and say it.
+  DEPLOYING=`echo $line | sed -n 's/INFO: Deploying web application .* \(.*\)/\1/p'| sed 's:.*/::'`
+  
+  if [ "$DEPLOYING" != "" ] && [ $VERBOSE != 0 ]; then
+    if [ "$VOLUME_MUTED" == "true" ]; then
+      NOTIFICATION="osascript -e 'display notification \"\" with title \"Tomcat: Deploying $DEPLOYING\"'"
+      eval $NOTIFICATION
+    else
+      say -v Alex "Now Deploying $DEPLOYING"
+    fi
+  fi
+ 
+  # See if the application has deployed.
+  # If it has then get the time, announce etc.
+  START_TIME=`echo $line | sed -n 's/INFO: Server startup in \([0-9]*\) ms/\1/p'`
+  
+  if [ "$START_TIME" != "" ]; then
+    MINUTES=$(( $START_TIME / 60000))
+    SECONDS=$(( ($START_TIME - ($MINUTES * 60000)) / 1000 )) 
+ 
+    if [ $MINUTES == 1 ];then
+      MINUTE_NOUN="minute"
+    else
+      MINUTE_NOUN="minutes"
+    fi
+
+    if [ $SECONDS == 1 ];then
+      SECOND_NOUN="second"
+    else
+      SECOND_NOUN="seconds"
+    fi
+   
+    if [ "$VOLUME_MUTED" == "true" ]; then
+      NOTIFICATION="osascript -e 'display notification \"Startup Time: $MINUTES $MINUTE_NOUN, $SECONDS $SECOND_NOUN\" with title \"Tomcat: Started\"'"
+      eval $NOTIFICATION
+    else
+      say -v Zarvox "Tomcat started in $MINUTES $MINUTE_NOUN $SECONDS $SECOND_NOUN"     
+    fi
+  fi
+ 
+done < /dev/stdin
+
