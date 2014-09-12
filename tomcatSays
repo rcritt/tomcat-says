@@ -2,8 +2,9 @@
 
 #
 # tomcatSays: 
-# Let Tomcat speak when it is ready!
-# This is for Mac OS X. 
+# This script can parse a Tomcat log file to describe the time to startup.
+# Additionally, as each application is started it can describe those as well.
+# The script is for Mac OS X.
 # 
 # By Rollin Crittendon, copyright 2014
 
